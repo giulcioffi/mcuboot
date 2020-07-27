@@ -28,6 +28,9 @@
 #define MCUBOOT_LOG_LEVEL_INFO     3
 #define MCUBOOT_LOG_LEVEL_DEBUG    4
 
+/** Standard printf implementation */
+#if !MBED_CONF_MBED_TRACE_ENABLE
+
 /*
  * The compiled log level determines the maximum level that can be
  * printed.  Messages at or below this level can be printed, provided
@@ -76,5 +79,50 @@
 #else
 #define MCUBOOT_LOG_DBG(...) IGNORE(__VA_ARGS__)
 #endif
+
+#else /** MBED_TRACE_ENABLE is enabled */
+
+#include "mbed_trace.h"
+
+/** mbed-trace compatible implementation */
+
+/*
+ * The compiled log level determines the maximum level that can be
+ * printed.  Messages at or below this level can be printed, provided
+ * they are also enabled through the Rust logging system, such as by
+ * setting RUST_LOG to bootsim::api=info.
+ */
+#ifndef MCUBOOT_LOG_LEVEL
+#define MCUBOOT_LOG_LEVEL MCUBOOT_LOG_LEVEL_INFO
+#endif
+
+#define MCUBOOT_LOG_MODULE_DECLARE(domain)  TRACE_GROUP #domain
+#define MCUBOOT_LOG_MODULE_REGISTER(domain) /* ignore */
+
+#if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_ERROR
+#define MCUBOOT_LOG_ERR(_fmt, ...) mbed_tracef(TRACE_LEVEL_ERROR, TRACE_GROUP, _fmt, __VA_ARGS__)
+#else
+#define MCUBOOT_LOG_ERR(...) IGNORE(__VA_ARGS__)
+#endif
+
+#if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_WARNING
+#define MCUBOOT_LOG_WRN(_fmt, ...) mbed_tracef(TRACE_LEVEL_WARN, TRACE_GROUP, _fmt, __VA_ARGS__)
+#else
+#define MCUBOOT_LOG_WRN(...) IGNORE(__VA_ARGS__)
+#endif
+
+#if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_INFO
+#define MCUBOOT_LOG_INF(_fmt, ...) mbed_tracef(TRACE_LEVEL_INFO, TRACE_GROUP, _fmt, __VA_ARGS__);
+#else
+#define MCUBOOT_LOG_INF(...) IGNORE(__VA_ARGS__)
+#endif
+
+#if MCUBOOT_LOG_LEVEL >= MCUBOOT_LOG_LEVEL_DEBUG
+#define MCUBOOT_LOG_DBG(_fmt, ...) mbed_tracef(TRACE_LEVEL_DEBUG, TRACE_GROUP, _fmt, __VA_ARGS__);
+#else
+#define MCUBOOT_LOG_DBG(...) IGNORE(__VA_ARGS__)
+#endif
+
+#endif /** MBED_TRACE_ENABLE */
 
 #endif /* __MCUBOOT_LOGGING_H__ */
